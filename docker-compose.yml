@@ -1,0 +1,62 @@
+# AMPET — سرویس‌های پایه توسعه (SP-00 / M-00.2)
+# postgres:16 + redis:7 + minio — فقط برای dev; prod جداگانه (SP-16).
+
+name: ampet-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ampet-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ampet_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-ampet}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ampet_dev_password_change_me}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ampet} -d ${POSTGRES_DB:-ampet_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ampet-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: ampet-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-ampet_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-ampet_minio_secret_change_me}
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Console
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:

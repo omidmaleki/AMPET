@@ -1,0 +1,23 @@
+{
+  "name": "ampet",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AMPET — مونوریپو (مونولیت ماژولار NestJS + Flutter + Next.js)",
+  "workspaces": [
+    "apps/api"
+  ],
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "scripts": {
+    "build": "npm run build -w @ampet/api",
+    "start:dev": "npm run start:dev -w @ampet/api",
+    "test": "npm run test -w @ampet/api",
+    "test:e2e": "npm run test:e2e -w @ampet/api",
+    "lint": "npm run lint -w @ampet/api",
+    "format": "npm run format -w @ampet/api",
+    "docs:check": "npm run docs:check -w @ampet/api",
+    "db:migrate": "npm run db:migrate -w @ampet/api",
+    "db:migrate:down": "npm run db:migrate:down -w @ampet/api"
+  }
+}

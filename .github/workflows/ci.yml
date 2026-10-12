@@ -1,0 +1,79 @@
+name: CI — AMPET (SP-00)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (api + web-admin + flutter analyze standalone)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Lint API
+        run: npm run lint -w @ampet/api
+      # Flutter analyze پس از نصب Flutter روی runner اضافه می‌شود (SP-00 کامل);
+      # فعلاً step non-blocking جهت صداقت وضعیت:
+      - name: Flutter analyze (placeholder — نیازمند نصب Flutter SDK)
+        run: echo "flutter analyze — به‌محض در دسترس‌بودن SDK در runner فعال می‌شود"
+
+  test:
+    name: Test (unit + contract روی Postgres/Redis سرویس‌شده)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ampet_test
+          POSTGRES_USER: ampet
+          POSTGRES_PASSWORD: ampet_test_pw
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ampet -d ampet_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://ampet:ampet_test_pw@localhost:5432/ampet_test
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Unit + contract tests
+        run: npm run test -w @ampet/api -- --coverage
+      - name: Migrations up then down (تمرین rollback — ماده ۸.۵)
+        run: |
+          npm run db:migrate -w @ampet/api
+          npm run db:migrate:down -w @ampet/api
+          npm run db:migrate -w @ampet/api
+      - name: Swagger docs:check
+        run: npm run docs:check -w @ampet/api

@@ -1,0 +1,42 @@
+# ---- Node / npm ----
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+coverage/
+
+# ---- env (هرگز سکرت واقعی نباید commit شود) ----
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ---- Logs ----
+logs/
+*.log
+npm-debug.log*
+
+# ---- Flutter / Dart ----
+apps/app/.dart_tool/
+apps/app/build/
+apps/app/.flutter-plugins
+apps/app/.flutter-plugins-dependencies
+apps/app/android/.gradle/
+apps/app/ios/Pods/
+apps/app/ios/.symlinks/
+apps/app/**/*.g.dart
+
+# ---- Next.js ----
+apps/web-admin/.next/
+apps/web-admin/out/
+
+# ---- IDE / OS ----
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# ---- Python generators (سندسازی) ----
+__pycache__/
+*.pyc
