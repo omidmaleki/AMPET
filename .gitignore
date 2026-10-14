@@ -17,18 +17,18 @@ logs/
 npm-debug.log*
 
 # ---- Flutter / Dart ----
-apps/app/.dart_tool/
-apps/app/build/
-apps/app/.flutter-plugins
-apps/app/.flutter-plugins-dependencies
-apps/app/android/.gradle/
-apps/app/ios/Pods/
-apps/app/ios/.symlinks/
-apps/app/**/*.g.dart
+Main_Code/apps/app/.dart_tool/
+Main_Code/apps/app/build/
+Main_Code/apps/app/.flutter-plugins
+Main_Code/apps/app/.flutter-plugins-dependencies
+Main_Code/apps/app/android/.gradle/
+Main_Code/apps/app/ios/Pods/
+Main_Code/apps/app/ios/.symlinks/
+Main_Code/apps/app/**/*.g.dart
 
 # ---- Next.js ----
-apps/web-admin/.next/
-apps/web-admin/out/
+Main_Code/apps/web-admin/.next/
+Main_Code/apps/web-admin/out/
 
 # ---- IDE / OS ----
 .vscode/
