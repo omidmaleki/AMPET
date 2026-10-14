@@ -1,63 +1,44 @@
-import {
-  Body,
-  Controller,
-  HttpStatus,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Post, Req } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ErrorCode } from '../../common/error-codes';
-import { ApiException } from '../../common/exceptions/api.exception';
+import { Request } from 'express';
+import { AuthService } from './auth.service';
+import { LogoutDto, OtpRequestDto, OtpVerifyDto, RefreshDto } from './dto/auth.dto';
+import { toRequestContext } from './request-context';
 
-export class OtpRequestDto {
-  phone!: string;
-}
-
-export class OtpVerifyDto {
-  phone!: string;
-  code!: string;
-}
-
+/**
+ * مسیرهای Auth (SP-01 M-01.2/M-01.3) — زیر `/api/v1`:
+ * `POST /auth/otp/request`، `/auth/otp/verify`، `/auth/refresh`، `/auth/logout`.
+ */
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
+  constructor(private readonly auth: AuthService) {}
+
   @Post('otp/request')
-  @ApiOperation({ summary: 'درخواست OTP — سقف ۳/۱۰دقیقه' })
-  async otpRequest(@Body() dto: OtpRequestDto): Promise<{ message: string }> {
-    // M-01.2: سقف ۳/۱۰دقیقه، کد ۵ رقمی، expires ۱۲۰ ثانیه
-    if (!/^09\d{9}$/.test(dto.phone)) {
-      throw new ApiException(
-        ErrorCode.VALIDATION_ERROR,
-        HttpStatus.BAD_REQUEST,
-        'شماره موبایل معتبر نیست. ۱۱ رقم وارد کنید',
-      );
-    }
-    return { message: 'کد تأیید ارسال شد' };
-  }
-
-  @Post('refresh')
-  @ApiOperation({ summary: 'Refresh چرخشی — باطل کردن token قدیمی' })
-  async refresh(@Body() body: { refresh_token: string }): Promise<{ access_token: string }> {
-    return { access_token: 'new-access-token' };
-  }
-
-  @Post('logout')
-  @ApiOperation({ summary: 'خروج — باطل کردن refresh' })
-  async logout(): Promise<{ message: string }> {
-    return { message: 'نشست باطل شد' };
+  @ApiOperation({ summary: 'درخواست OTP — سقف ۳/۱۰دقیقه به تفکیک شماره و IP' })
+  async requestOtp(@Body() dto: OtpRequestDto, @Req() req: Request) {
+    return this.auth.requestOtp(dto.phone, dto.purpose ?? 'login', req.ip ?? null);
   }
 
   @Post('otp/verify')
   @ApiOperation({ summary: 'تأیید OTP — قفل ۱۵دقیقه پس از ۳ تلاش ناموفق' })
-  async otpVerify(@Body() dto: OtpVerifyDto): Promise<{ success: boolean; token?: string }> {
-    // M-01.2: اعتبار، انقضا، شمارش تلاش، قفل ۱۵دقیقه با Retry-After: 900
-    if (!dto.phone || !dto.code || dto.code.length !== 5) {
-      throw new ApiException(
-        ErrorCode.VALIDATION_ERROR,
-        HttpStatus.BAD_REQUEST,
-        'کد تأیید ۵ رقمی الزامی است',
-      );
-    }
-    // اسکلت: در SP-01 کامل می‌شود
-    return { success: true, token: 'jwt-placeholder' };
+  async verifyOtp(@Body() dto: OtpVerifyDto, @Req() req: Request) {
+    return this.auth.verifyOtp(
+      dto.phone,
+      dto.code,
+      toRequestContext(req, { device_id: dto.device_id, platform: dto.platform }),
+    );
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Refresh چرخشی ۳۰ روزه — باطل کردن توکن قدیمی' })
+  async refresh(@Body() dto: RefreshDto, @Req() req: Request) {
+    return this.auth.refresh(dto.refresh_token, toRequestContext(req));
+  }
+
+  @Post('logout')
+  @ApiOperation({ summary: 'خروج — باطل کردن refresh همان نشست' })
+  async logout(@Body() dto: LogoutDto) {
+    return this.auth.logout(dto.refresh_token);
   }
 }

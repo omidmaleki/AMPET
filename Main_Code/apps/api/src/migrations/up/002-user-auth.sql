@@ -39,13 +39,16 @@ CREATE UNIQUE INDEX ux_role_perm ON role_permissions (role, permission_code) WHE
 ALTER TABLE users
   ADD COLUMN two_factor_enabled boolean NOT NULL DEFAULT false,
   ADD COLUMN deletion_scheduled_at timestamptz,
+  ADD COLUMN terms_version varchar(20),
+  ADD COLUMN last_seen_at timestamptz,
   ADD COLUMN status varchar(20) NOT NULL DEFAULT 'ACTIVE';
 
 ALTER TABLE users ADD CONSTRAINT chk_users_status CHECK (status IN ('ACTIVE','PENDING_DELETION','SUSPENDED'));
 CREATE INDEX ix_users_status ON users (status) WHERE deleted_at IS NULL;
 
 -- ---------- ALTER otp_codes ----------
-CREATE INDEX ix_otp_codes_phone_purpose_expires ON otp_codes (phone, purpose, expires_at);
+-- ایندکس (phone, purpose, expires_at) از قبل در 001 به نام ix_otp_codes_phone_purpose هست؛ تکرار نمی‌کنیم.
 
 -- ---------- ALTER sessions ----------
-CREATE INDEX ix_sessions_user_revoked ON sessions (user_id, revoked_at);
+ALTER TABLE sessions ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now();
+-- ایندکس (user_id, revoked_at) از قبل در 001 به نام ix_sessions_user_revoked هست؛ تکرار نمی‌کنیم.

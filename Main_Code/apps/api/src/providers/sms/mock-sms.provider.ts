@@ -26,6 +26,10 @@ export class MockSmsProvider implements SmsProvider {
   }
 
   async send(params: SmsSendParams): Promise<SmsResult> {
+    // نگه‌داشتن کد قالب‌های OTP/2FA برای تست‌های یکپارچه (بدون تغییر رفتار mock)
+    if (params.templateCode.startsWith('SMS-') && typeof params.params?.code === 'string') {
+      lastCodeByPhone.set(params.phone, params.params.code);
+    }
     this.write(
       `${params.templateCode} phone=${params.phone} params=${JSON.stringify(params.params)}`,
     );

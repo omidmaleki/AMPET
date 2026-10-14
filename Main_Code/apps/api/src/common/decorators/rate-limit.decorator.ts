@@ -7,6 +7,8 @@ export interface RateLimitOptions {
   windowMs: number;
   /** scope کلید: 'ip' | 'user' | 'ip+user' (پیش‌فرض ip) */
   scope?: 'ip' | 'user' | 'ip+user';
+  /** نام سطل (برای پیام دقیق؛ مثلاً 'otp' ⇒ پیام اختصاصی OTP) */
+  name?: string;
 }
 
 export const RATE_LIMIT_METADATA = 'rate_limit';

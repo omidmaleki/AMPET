@@ -81,6 +81,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     res.status(status);
     if (requestId) res.setHeader('X-Request-Id', requestId);
+    // اگر جزئیات شامل retry_after_seconds باشد، هدر استاندارد Retry-After ست شود
+    const retryAfter = details.find((d) => typeof d.retry_after_seconds === 'number');
+    if (retryAfter) res.setHeader('Retry-After', String(retryAfter.retry_after_seconds));
     const envelope: ErrorEnvelope = {
       success: false,
       data: null,

@@ -38,6 +38,16 @@
 | D-034 | موتور اعلان | جدول‌های جدید `notification_templates` (۷۸ قالب ۳۵+۳۴+۹)، افزودن به `notifications`، `notification_settings`، `reminders` | SP-11 | ✅ مصوب |
 | D-035 | تحویل پیک | مسیرهای `GET/DELIVERY` وب تک‌سفارش بدون اکانت؛ `DELIVERY_CODE_INVALID` کد افزوده (سند پایه ندارد) | SP-08 | ✅ مصوب |
 
+### ۳-الف. تصمیم‌های SP-01 (Auth) — ثبت‌شده هنگام پیاده‌سازی
+
+| ID | عنوان | خلاصه تصمیم | SP | وضعیت |
+|----|-------|-------------|----|--------|
+| D-043 | ذخیره‌سازی OTP | فقط **هش HMAC-SHA256** با pepper محیطی (`OTP_HASH_PEPPER`) در `otp_codes.code_hash`؛ متن کد ۵ رقمی هرگز در DB نیست | SP-01 | ✅ پیاده‌شده |
+| D-044 | قفل OTP | **قفل ۱۵ دقیقه** پس از ۳ تلاش ناموفق (`OTP_TRIES_EXCEEDED` + هدر `Retry-After: 900`)؛ انقضای کد ۱۲۰ ثانیه | SP-01 | ✅ پیاده‌شده (مغایرت «۶۰ ثانیه» در TA §۷.۱ در ریسک SP-01 ثبت شد) |
+| D-045 | Refresh چرخشی | refresh ۳۰ روزه با `jti` یکتا؛ فقط **هش sha256** در `sessions.refresh_hash`؛ استفاده مجدد از توکن کهنه ⇒ **ابطال همه نشست‌های کاربر** + ثبت `auth.refresh_reuse` در `audit_logs` | SP-01 | ✅ پیاده‌شده |
+| D-046 | 2FA ادمین | نقش‌های `admin_super`/`accountant`/`finance` نیازمند 2FA؛ مسیر `POST /admin/auth/2fa/verify` (OTP با `purpose=2fa`)؛ JWT ادمین ۱۰ دقیقه / مشتری ۱۵ دقیقه | SP-01 | ✅ پیاده‌شده |
+| D-047 | لایه دیتابیس | `DatabaseModule` سراسری روی `pg.Pool` **بدون ORM**؛ `transaction` تضمین BEGIN/COMMIT/ROLLBACK؛ بوت اپ بدون Postgres ممکن است | SP-01 | ✅ پیاده‌شده |
+
 ## ۴. کدهای خطای جدید (خارج از فهرست `project-document.md:4667`)
 
 > قاعده مشترک (SP-12/13/14): هر کد ⚠️ **جدید** باید در همان SP در Swagger ثبت و به کارفرما اعلام شود. فهرست کامل در `docs/error-codes.md`.
@@ -45,6 +55,7 @@
 | کد | HTTP | معنی | SP |
 |----|------|------|----|
 | `PRICE_OUT_OF_BAND` | 422 | خارج از بازه بازار میانه ±۴۰٪ | SP-03 |
+| `TOKEN_INVALID` / `ACCOUNT_BLOCKED` / `2FA_REQUIRED` / `ACCOUNT_DELETION_BLOCKED` | 401/403/422 | احراز هویت/نشست/حذف حساب | SP-01 |
 | `ADDRESS_IN_USE` / `ADDRESS_DEFAULT_REQUIRED` / `PET_LIMIT_REACHED` / `PET_HAS_ACTIVE_BOOKING` / `SHARE_LINK_EXPIRED` / `RECORD_EDIT_WINDOW_CLOSED` | 409/422 | آدرس/حیوان (تصمیم متن‌ها در SP-02) | SP-02 |
 | `DELIVERY_CODE_INVALID` | 422 | کد ۶ رقمی اشتباه | SP-08 |
 | `EARLY_WITHDRAWAL_NOT_ALLOWED` / `WALLET_DEBT_PENDING` | 422 | برداشت زودهنگام / کیف پول منفی | SP-09 |

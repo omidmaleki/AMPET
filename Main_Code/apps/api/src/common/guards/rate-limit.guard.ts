@@ -11,6 +11,7 @@ import { Request, Response } from 'express';
 import { RATE_LIMIT_METADATA, RateLimitOptions } from '../decorators/rate-limit.decorator';
 import { ErrorCode } from '../error-codes';
 import { ApiException } from '../exceptions/api.exception';
+import { toPersianDigits } from '../persian';
 import {
   buildRateLimitKey,
   RateLimiter,
@@ -50,12 +51,14 @@ export class RateLimitGuard implements CanActivate {
       const retryAfterSeconds = Math.max(1, Math.ceil(result.retryAfterMs / 1000));
       response.setHeader('Retry-After', String(retryAfterSeconds));
       response.setHeader('X-RateLimit-Remaining', '0');
-      throw new ApiException(
-        ErrorCode.RATE_LIMIT_EXCEEDED,
-        HttpStatus.TOO_MANY_REQUESTS,
-        'تعداد درخواست‌ها بیش از حد مجاز است؛ کمی بعد دوباره تلاش کنید',
-        [{ retry_after_seconds: retryAfterSeconds }],
-      );
+      const minutes = Math.max(1, Math.ceil(result.retryAfterMs / 60_000));
+      const message =
+        options.name === 'otp'
+          ? `تعداد درخواست‌های شما زیاد است. ${toPersianDigits(minutes)} دقیقه دیگر دوباره تلاش کنید`
+          : 'تعداد درخواست‌ها بیش از حد مجاز است؛ کمی بعد دوباره تلاش کنید';
+      throw new ApiException(ErrorCode.RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS, message, [
+        { retry_after_seconds: retryAfterSeconds },
+      ]);
     }
     response.setHeader('X-RateLimit-Remaining', String(options.limit - result.count));
     return true;

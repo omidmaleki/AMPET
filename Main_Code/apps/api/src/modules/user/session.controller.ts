@@ -1,40 +1,62 @@
-import { Controller, Get, Post, Patch, Body, Req, UseGuards, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Request } from 'express';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from '../auth/auth.service';
+import { AuthUser } from '../auth/auth.types';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { PatchMeDto } from '../auth/dto/auth.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+/**
+ * پروفایل و نشست کاربر جاری (SP-01 M-01.3/M-01.4) — نیازمند Access JWT.
+ * `GET /me`، `PATCH /me`، `GET /me/sessions`، `POST /me/sessions/{id}/revoke`،
+ * `POST /me/sessions/revoke-all`.
+ */
 @ApiTags('me')
+@ApiBearerAuth()
 @Controller('me')
+@UseGuards(JwtAuthGuard)
 export class SessionController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly auth: AuthService) {}
 
   @Get()
-  @ApiOperation({ summary: 'پروفایل کاربر — شامل role, status' })
-  @ApiBearerAuth()
-  async me(@Req() req: Request): Promise<any> {
-    return { id: (req as any).user?.sub, status: 'ACTIVE' };
+  @ApiOperation({ summary: 'پروفایل کاربر — شامل role, status, terms_version' })
+  async me(@CurrentUser() user: AuthUser) {
+    return this.auth.me(user.id);
+  }
+
+  @Patch()
+  @ApiOperation({ summary: 'ویرایش پروفایل — نام الزامی در اولین تکمیل' })
+  async patchMe(@CurrentUser() user: AuthUser, @Body() dto: PatchMeDto) {
+    return this.auth.patchMe(user.id, dto);
   }
 
   @Get('sessions')
-  @ApiOperation({ summary: 'لیست نشست‌های فعال' })
-  @ApiBearerAuth()
-  async sessions(): Promise<any> {
-    return { items: [], meta: { total: 0 } };
+  @ApiOperation({ summary: 'لیست نشست‌های فعال — با علامت «این دستگاه»' })
+  async sessions(@CurrentUser() user: AuthUser) {
+    return this.auth.listSessions(user.id, user.sid);
   }
 
   @Post('sessions/revoke-all')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'خروج از همه دستگاه‌ها' })
-  @ApiBearerAuth()
-  async revokeAll(): Promise<{ message: string }> {
-    return { message: 'همه نشست‌ها باطل شدند' };
+  async revokeAll(@CurrentUser() user: AuthUser) {
+    return this.auth.revokeAllSessions(user.id, user.sid);
   }
 
-  @Patch('me')
-  @ApiOperation({ summary: 'ویرایش پروفایل — اولویت تکمیل پروفایل بعد از OTP' })
-  @ApiBearerAuth()
-  async patchMe(@Req() req: Request, @Body() body: any): Promise<any> {
-    // M-01.4: نام/نام خانوادگی الزامی در اولین تکمیل؛ validation در SP-01 کامل می‌شود
-    return { message: 'پروفایل به‌روزرسانی شد' };
+  @Post('sessions/:id/revoke')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'باطل کردن یک نشست مشخص' })
+  async revokeOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.auth.revokeSession(user.id, id);
   }
 }
-

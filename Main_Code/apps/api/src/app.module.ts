@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import * as path from 'path';
 import { validateEnv } from './config/env.validation';
+import { DatabaseModule } from './database/database.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { RateLimitGuard } from './common/guards/rate-limit.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -30,6 +31,7 @@ import { SmsModule } from './providers/sms/sms.module';
       validate: validateEnv,
     }),
     RateLimitModule,
+    DatabaseModule,
     SmsModule,
     PaymentGatewayModule,
     // ماژول‌های دامنه (بدون کد فیچر در SP-00)

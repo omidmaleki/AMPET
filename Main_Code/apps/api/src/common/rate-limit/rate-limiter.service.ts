@@ -51,7 +51,8 @@ export class MemoryRateLimiter extends RateLimiter {
 /** تعیین سقف پیش‌فرض از روی مسیر (پروژه‌داک §6). */
 export function resolveBucketByPath(path: string): RateLimitOptions {
   const p = `${path}`;
-  if (p.includes('/auth/otp/request')) return { limit: 3, windowMs: 10 * 60_000, scope: 'ip+user' };
+  if (p.includes('/auth/otp/request'))
+    return { limit: 3, windowMs: 10 * 60_000, scope: 'ip+user', name: 'otp' };
   if (p.includes('/admin')) return { limit: 120, windowMs: 60_000 };
   if (p.includes('/payments')) return { limit: 10, windowMs: 60_000 };
   return { limit: 60, windowMs: 60_000 };

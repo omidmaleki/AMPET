@@ -27,7 +27,10 @@ function collectRegisteredPaths(app: INestApplication): string[] {
 }
 
 function normalize(path: string): string {
-  return path.replace(/:[A-Za-z0-9_]+/g, '{param}').replace(/\/+$/, '');
+  return path
+    .replace(/:[A-Za-z0-9_]+/g, '{param}')
+    .replace(/\{[A-Za-z0-9_]+\}/g, '{param}')
+    .replace(/\/+$/, '');
 }
 
 const REQUIRED_ROUTES = [
